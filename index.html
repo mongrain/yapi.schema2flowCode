@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+		<title>yapi</title>
+		<style>
+			body {
+				padding: 0 2%;
+			}
+			textarea {
+				width: 40%;
+				max-width: 500px;
+				height: 50vh;
+				padding: 5px;
+				margin-right: 40px;
+			}
+			div {
+				display: flex;
+			}
+		</style>
+	</head>
+	<body>
+		<h2>YAPI Schema : code -> flow code</h2>
+		<div>
+			<textarea></textarea>
+			<pre id="result"></pre>
+		</div>
+
+		<script>
+			document.querySelector('textarea').oninput = function(e) {
+				try {
+					const schema = JSON.parse(`${e.target.value}`);
+					document.querySelector('#result').innerHTML = getJsonWrap(
+						schema.properties,
+					);
+				} catch (e) {
+					console.log('not a json', e);
+				}
+			};
+
+			let types = []
+
+			function getMockByType(type) {
+				if (type === 'string') {
+					return 'string';
+				} else if (type === 'boolean') {
+					return 'boolean';
+				} else if (type === 'number') {
+					return 'number';
+				}
+				return null;
+			}
+
+			function getJson(schema, parent = {}) {
+				Object.entries(schema).map(([key, value]) => {
+					if (value.properties && value.type === 'object') {
+						parent[key] = getJson(value.properties);
+					} else if (
+						value.type === 'array' &&
+						value.items &&
+						value.items.properties
+					) {
+						let type = `const ${key}Alias = ${JSON.stringify(value.items.properties, null, 2)}\r\n`
+						types.push(type);
+						console.log('types', types)
+						parent[key] = `Array&lt;${key}Alias&gt;`;
+					} else if (value.type !== 'null') {
+						parent[key] = `${getMockByType(value.type)}`;
+					} else {
+						parent[key] = `null`;
+					}
+				});
+				return parent;
+			}
+
+			function getJsonWrap(schema) {
+				var ret = {};
+				var result = getJson(schema, ret);
+				return JSON.stringify(result.data, null, 2)
+					.replace('{', `${types.map(t => t)}\r\n{`)
+					.replace(/"/g, '')
+					.replace(/\,const/g, 'const')
+			}
+		</script>
+	</body>
+</html>
