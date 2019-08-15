@@ -81,7 +81,7 @@
 				return JSON.stringify(result.data, null, 2)
 					.replace('{', `${types.map(t => t)}\r\n{`)
 					.replace(/"/g, '')
-					.replace(/\,const/g, 'const')
+					.replace(/\,type/g, 'type')
 			}
 		</script>
 	</body>
