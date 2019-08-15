@@ -101,7 +101,7 @@
 			function getJsonWrap(schema) {
 				var ret = {};
 				var result = getJson(schema, ret);
-				return (`${types.map(t => t)}\r\n` + JSON.stringify(result['data?'], null, 2))
+				return (`${types.map(t => t)}\r\n` + JSON.stringify(result, null, 2))
 					.replace(/"/g, '')
 					.replace(/\,type/g, 'type');
 			}
