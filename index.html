@@ -5,6 +5,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta http-equiv="X-UA-Compatible" content="ie=edge" />
 		<title>yapi schema -> flow</title>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js"></script>
 		<style>
 			body {
 				padding: 0 2%;
@@ -24,23 +25,34 @@
 	<body>
 		<h2>YAPI Schema : code -> flow code</h2>
 		<div>
-			<textarea></textarea>
+			<textarea>
+					{"$schema":"http://json-schema.org/draft-04/schema#","type":"object","properties":{"success":{"type":"boolean"},"errorCode":{"type":"null"},"errorMsg":{"type":"null"},"errorDetail":{"type":"null"},"data":{"type":"object","properties":{"total":{"type":"number"},"size":{"type":"number"},"pages":{"type":"number"},"current":{"type":"number"},"pageNum":{"type":"number"},"hasNextPage":{"type":"boolean"},"list":{"type":"array","items":{"type":"object","properties":{"houseSourceId":{"type":"string","description":"房源id"},"houseNo":{"type":"string","description":"房源编号"},"firstImageUrl":{"type":["string","null"],"description":"房源首图"},"address":{"type":"string","description":"房源地址"},"assistName":{"type":"string","description":"房源主管家名称"},"assistPhone":{"type":"string","description":"房源主管家电话"},"level":{"type":"number","description":"保洁对应级别\n1-主保洁人员 2-副保洁人员"}}}}}}}}
+			</textarea>
 			<pre id="result"></pre>
 		</div>
+		<textarea id="bar" hidden></textarea>
+		<button
+			class="copyBtn"
+			data-clipboard-action="copy"
+			data-clipboard-target="#bar"
+		>
+			点击复制转换结果
+		</button>
 
 		<script>
+			let types = [];
 			document.querySelector('textarea').oninput = function(e) {
 				try {
 					const schema = JSON.parse(`${e.target.value}`);
-					document.querySelector('#result').innerHTML = getJsonWrap(
-						schema.properties,
-					);
+					const data = getJsonWrap(schema.properties);
+					types = [];
+					document.querySelector('#result').innerHTML = data;
+					document.querySelector('#bar').value = data;
+					console.log(types)
 				} catch (e) {
 					console.log('not a json', e);
 				}
 			};
-
-			let types = []
 
 			function getMockByType(type) {
 				if (type === 'string') {
@@ -56,19 +68,33 @@
 			function getJson(schema, parent = {}) {
 				Object.entries(schema).map(([key, value]) => {
 					if (value.properties && value.type === 'object') {
-						parent[key] = getJson(value.properties);
+						parent[`${key}?`] = getJson(value.properties);
 					} else if (
 						value.type === 'array' &&
 						value.items &&
 						value.items.properties
 					) {
-						let type = `type ${key}Alias = ${JSON.stringify(getJson(value.items.properties), null, 2)}\r\n`
+						let type = `type ${key}Alias = ${JSON.stringify(
+							getJson(value.items.properties),
+							null,
+							2,
+						)}\r\n`;
 						types.push(type);
-						parent[key] = `Array&lt;${key}Alias&gt;`;
+						parent[`${key}?`] = `Array&lt;${key}Alias&gt;`;
 					} else if (value.type !== 'null') {
-						parent[key] = `${getMockByType(value.type)}`;
+						parent[`${key}?`] = `${getMockByType(value.type)}`;
 					} else {
-						parent[key] = `null`;
+						parent[`${key}?`] = `null`;
+					}
+					if (value.required) {
+						Object.keys(parent[`${key}?`]).map(k => {
+							let newKey;
+							if (value.required.includes(k.slice(0, -1))) {
+								const value = parent[`${key}?`][k];
+								newKey = `${k.slice(0, -1)}`;
+								parent[newKey] = value;
+							}
+						});
 					}
 				});
 				return parent;
@@ -77,11 +103,22 @@
 			function getJsonWrap(schema) {
 				var ret = {};
 				var result = getJson(schema, ret);
-				return JSON.stringify(result.data, null, 2)
-					.replace('{', `${types.map(t => t)}\r\n{`)
+				return (`${types.map(t => t)}\r\n` + JSON.stringify(result['data?'], null, 2))
 					.replace(/"/g, '')
-					.replace(/\,type/g, 'type')
+					.replace(/\,type/g, 'type');
 			}
+
+			//实例化 ClipboardJS对象;
+			var copyBtn = new ClipboardJS('.copyBtn');
+
+			copyBtn.on('success', function(e) {
+				// 复制成功
+				e.clearSelection();
+			});
+			copyBtn.on('error', function(e) {
+				//复制失败；
+				console.log(e.action);
+			});
 		</script>
 	</body>
 </html>
