@@ -62,7 +62,7 @@
 						value.items &&
 						value.items.properties
 					) {
-						let type = `const ${key}Alias = ${JSON.stringify(value.items.properties, null, 2)}\r\n`
+						let type = `type ${key}Alias = ${JSON.stringify(value.items.properties, null, 2)}\r\n`
 						types.push(type);
 						console.log('types', types)
 						parent[key] = `Array&lt;${key}Alias&gt;`;
