@@ -20,6 +20,18 @@
 			div {
 				display: flex;
 			}
+			#bar {
+				height: 0;
+				width: 0;
+				resize: none;
+				resize: none;
+				padding: 0;
+				overflow: hidden;
+				margin: 0;
+				position: relative;
+				top: -50px;
+				z-index: -1;
+			}
 		</style>
 	</head>
 	<body>
@@ -28,7 +40,6 @@
 			<textarea></textarea>
 			<pre id="result"></pre>
 		</div>
-		<textarea id="bar" hidden></textarea>
 		<button
 			class="copyBtn"
 			data-clipboard-action="copy"
@@ -36,6 +47,7 @@
 		>
 			点击复制转换结果
 		</button>
+		<textarea id="bar"></textarea>
 
 		<script>
 			let types = [];
@@ -46,7 +58,6 @@
 					types = [];
 					document.querySelector('#result').innerHTML = data;
 					document.querySelector('#bar').value = data;
-					console.log(types)
 				} catch (e) {
 					console.log('not a json', e);
 				}
